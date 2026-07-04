@@ -1,0 +1,9 @@
+*.o
+*.elf
+*.map
+*.bin
+*.hex
+
+.vscode/
+
+compile_commands.json
