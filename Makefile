@@ -5,15 +5,18 @@ LDFLAGS = -nostdlib -T stm32_ls.ld -Wl,-Map=final.map
 OPENOCD_SCRIPTS = /usr/share/openocd/scripts
 
 
-all : main.o stm32_startup.o final.elf
+all : main.o led.o stm32_startup.o final.elf
 
 main.o : main.c
+	$(CC) $(CFLAGS) $^ -o $@
+
+led.o : led.c
 	$(CC) $(CFLAGS) $^ -o $@
 
 stm32_startup.o : stm32_startup.c
 	$(CC) $(CFLAGS) $^ -o $@
 
-final.elf : main.o stm32_startup.o
+final.elf : main.o led.o stm32_startup.o
 	$(CC) $(LDFLAGS) $^ -o $@
 
 clean :
