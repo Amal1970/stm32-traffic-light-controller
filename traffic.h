@@ -39,4 +39,6 @@ void traffic_update(void);
 void pedestrian_request(void);
 void emergency_request(void);
 
+void change_state(state new_state);
+
 #endif

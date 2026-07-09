@@ -11,12 +11,59 @@ void traffic_init(void){
     traffic_controller.is_emergency = 0;
 }
 
+void change_state(state new_state){
+    traffic_controller.current_state = new_state;
+    traffic_controller.state_start_tick = g_tick_count;
+
+    if(new_state == EMERGENCY || new_state == PEDESTRIAN){
+        traffic_controller.blue_led_tick = g_tick_count;
+    }
+}
+
+static void update_leds(state current_state){
+    led_off(LED_GREEN);
+    led_off(LED_ORANGE);
+    led_off(LED_RED);
+
+    switch(current_state){
+        case GREEN :
+            led_on(LED_GREEN);
+            break;
+
+        case YELLOW :
+            led_on(LED_ORANGE);
+            break;
+
+        case RED :
+        case PEDESTRIAN :
+        case EMERGENCY :
+            led_on(LED_RED);
+            break;
+
+        default:
+            break;
+    }
+}
+
+static void clear_pedestrian_request(void){
+    traffic_controller.is_pedestrian = 0;
+}
+
+static void clear_emergency_request(void){
+    traffic_controller.is_emergency = 0;
+}
+
+static void update_blue_led(uint32_t toggle_rate){
+        if(((g_tick_count)-(traffic_controller.blue_led_tick))>=toggle_rate){
+            led_toggle(LED_BLUE);
+            traffic_controller.blue_led_tick = g_tick_count;
+        }
+}
+
 void traffic_update(void){
     // traffic update 
     if(traffic_controller.is_emergency && traffic_controller.current_state != EMERGENCY){
-        traffic_controller.current_state = EMERGENCY;
-        traffic_controller.state_start_tick = g_tick_count;
-        traffic_controller.blue_led_tick = g_tick_count;
+        change_state(EMERGENCY);
     }
 
     uint32_t elapsed_time = g_tick_count - traffic_controller.state_start_tick;
@@ -26,32 +73,20 @@ void traffic_update(void){
     switch(traffic_controller.current_state){
         case GREEN :
             if(elapsed_time>=GREEN_TIME){
-                // change state 
-                traffic_controller.current_state = YELLOW;
-                // update state start tick
-                traffic_controller.state_start_tick = g_tick_count;
+                change_state(YELLOW);
             }
-            led_on(LED_GREEN);
-            led_off(LED_ORANGE);
-            led_off(LED_RED);
+            update_leds(traffic_controller.current_state);
             break;
 
         case YELLOW :
             if(elapsed_time>=YELLOW_TIME){
-                // change state 
-                traffic_controller.current_state = RED;
-                // update state start tick
-                traffic_controller.state_start_tick = g_tick_count;
+                change_state(RED);
             }
-            led_off(LED_GREEN);
-            led_on(LED_ORANGE);
-            led_off(LED_RED);
+            update_leds(traffic_controller.current_state);
             break;
 
         case RED :
-            led_off(LED_GREEN);
-            led_off(LED_ORANGE);
-            led_on(LED_RED);
+            update_leds(traffic_controller.current_state);
 
             if(elapsed_time>=RED_TIME){
                 if(traffic_controller.is_pedestrian){
@@ -64,38 +99,26 @@ void traffic_update(void){
             }
             break;
         case PEDESTRIAN :
-            led_off(LED_GREEN);
-            led_off(LED_ORANGE);
-            led_on(LED_RED);
+            update_leds(traffic_controller.current_state);
 
             // need to toggle it every 500ms
-            if(((g_tick_count)-(traffic_controller.blue_led_tick))>=PEDESTRIAN_TOGGLE_RATE){
-                led_toggle(LED_BLUE);
-                traffic_controller.blue_led_tick = g_tick_count;
-            }
+            update_blue_led(PEDESTRIAN_TOGGLE_RATE);
             
 
             if(elapsed_time>=PEDESTRIAN_TIME){
-                traffic_controller.is_pedestrian = 0;
-                traffic_controller.current_state = GREEN;
-                traffic_controller.state_start_tick = g_tick_count;
+                clear_pedestrian_request();
+                change_state(GREEN);
                 led_off(LED_BLUE);
             }
             break;
         case EMERGENCY : 
-            led_off(LED_GREEN);
-            led_off(LED_ORANGE);
-            led_on(LED_RED);
+            update_leds(traffic_controller.current_state);
 
-            if((g_tick_count-traffic_controller.blue_led_tick)>=EMERGENCY_TOGGLE_RATE){
-                led_toggle(LED_BLUE);
-                traffic_controller.blue_led_tick = g_tick_count;
-            }
+            update_blue_led(EMERGENCY_TOGGLE_RATE);
 
             if(elapsed_time>=EMERGENCY_TIME){
-                traffic_controller.is_emergency = 0;
-                traffic_controller.current_state = GREEN;
-                traffic_controller.state_start_tick = g_tick_count;
+                clear_emergency_request();
+                change_state(GREEN);
                 led_off(LED_BLUE);
             }
             break;
