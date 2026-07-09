@@ -1,12 +1,17 @@
 #include <stdint.h>
 #include "main.h"
 #include "led.h"
+#include "traffic.h"
 
 volatile uint32_t g_tick_count = 0;
 
 int main(){
     // code here is only for testing 
     led_init();
+
+    traffic_init();
+
+    pedestrian_request();
 
     systick_init(TICK_HZ);
 
@@ -30,7 +35,5 @@ void systick_init(uint32_t ticks){
 
 void SysTick_Handler(void){
     g_tick_count++;
-    if(g_tick_count>=3000){
-        led_on(LED_BLUE);
-    }
+    traffic_update();
 }
