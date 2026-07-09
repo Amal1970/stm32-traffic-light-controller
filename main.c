@@ -11,7 +11,7 @@ int main(){
 
     traffic_init();
 
-    pedestrian_request();
+    emergency_request();
 
     systick_init(TICK_HZ);
 

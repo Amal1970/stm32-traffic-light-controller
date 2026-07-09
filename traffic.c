@@ -13,7 +13,15 @@ void traffic_init(void){
 
 void traffic_update(void){
     // traffic update 
+    if(traffic_controller.is_emergency && traffic_controller.current_state != EMERGENCY){
+        traffic_controller.current_state = EMERGENCY;
+        traffic_controller.state_start_tick = g_tick_count;
+        traffic_controller.blue_led_tick = g_tick_count;
+    }
+
     uint32_t elapsed_time = g_tick_count - traffic_controller.state_start_tick;
+
+
 
     switch(traffic_controller.current_state){
         case GREEN :
@@ -69,6 +77,23 @@ void traffic_update(void){
 
             if(elapsed_time>=PEDESTRIAN_TIME){
                 traffic_controller.is_pedestrian = 0;
+                traffic_controller.current_state = GREEN;
+                traffic_controller.state_start_tick = g_tick_count;
+                led_off(LED_BLUE);
+            }
+            break;
+        case EMERGENCY : 
+            led_off(LED_GREEN);
+            led_off(LED_ORANGE);
+            led_on(LED_RED);
+
+            if((g_tick_count-traffic_controller.blue_led_tick)>=EMERGENCY_TOGGLE_RATE){
+                led_toggle(LED_BLUE);
+                traffic_controller.blue_led_tick = g_tick_count;
+            }
+
+            if(elapsed_time>=EMERGENCY_TIME){
+                traffic_controller.is_emergency = 0;
                 traffic_controller.current_state = GREEN;
                 traffic_controller.state_start_tick = g_tick_count;
                 led_off(LED_BLUE);
